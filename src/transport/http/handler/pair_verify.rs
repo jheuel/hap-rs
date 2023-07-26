@@ -198,6 +198,8 @@ async fn handle_finish(
             let encrypted_data = Vec::from(&data[..data.len() - 16]);
             let auth_tag = Vec::from(&data[data.len() - 16..]);
 
+            info!("received encrypted data: {:?}", &encrypted_data);
+
             let mut nonce = vec![0; 4];
             nonce.extend(b"PV-Msg03");
 
@@ -213,19 +215,19 @@ async fn handle_finish(
             )?;
 
             let sub_tlv = tlv::decode(&decrypted_data);
-            debug!("received sub-TLV: {:?}", &sub_tlv);
+            info!("received sub-TLV: {:?}", &sub_tlv);
             let device_pairing_id = sub_tlv.get(&(Type::Identifier as u8)).ok_or(tlv::Error::Unknown)?;
-            debug!("raw device pairing ID: {:?}", &device_pairing_id);
+            info!("raw device pairing ID: {:?}", &device_pairing_id);
             let device_signature = ed25519_dalek::Signature::from_bytes(
                 sub_tlv.get(&(Type::Signature as u8)).ok_or(tlv::Error::Unknown)?,
             )?;
-            debug!("device signature: {:?}", &device_signature);
+            info!("device signature: {:?}", &device_signature);
 
             let uuid_str = str::from_utf8(device_pairing_id)?;
             let pairing_uuid = Uuid::parse_str(uuid_str)?;
-            debug!("device pairing UUID: {:?}", &pairing_uuid);
+            info!("device pairing UUID: {:?}", &pairing_uuid);
             let pairing = storage.lock().await.load_pairing(&pairing_uuid).await?;
-            debug!("loaded pairing: {:?}", &pairing);
+            info!("loaded pairing: {:?}", &pairing);
 
             let mut device_info: Vec<u8> = Vec::new();
             device_info.extend(session.a_pub.as_bytes());
